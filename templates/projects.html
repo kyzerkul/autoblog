@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management - YouTube Article Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <style>
+        .project-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .card-header-action {
+            float: right;
+        }
+        .status-badge {
+            font-size: 0.8em;
+            padding: 0.35em 0.65em;
+        }
+        .channel-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">YouTube Article Generator</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/projects">Projects</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h1>Project Management</h1>
+                <p class="lead">Manage your WordPress sites and YouTube channels</p>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" id="createProjectBtn">
+                    <i class="bi bi-plus-circle"></i> Create New Project
+                </button>
+            </div>
+        </div>
+
+        <!-- Projects List -->
+        <div class="row" id="projectsList">
+            <!-- Projects will be loaded here -->
+            <div class="col-12 text-center py-5" id="projectsLoading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading projects...</span>
+                </div>
+                <p class="mt-2">Loading projects...</p>
+            </div>
+            <div class="col-12 d-none" id="noProjectsMessage">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No projects found. Create your first project using the button above.
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Project Modal -->
+        <div class="modal fade" id="createProjectModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Create New Project</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createProjectForm">
+                            <!-- Project Details -->
+                            <h6 class="mb-3">Project Details</h6>
+                            <div class="mb-3">
+                                <label for="projectName" class="form-label">Project Name</label>
+                                <input type="text" class="form-control" id="projectName" required placeholder="My Project">
+                                <div class="form-text">A name to identify this project</div>
+                            </div>
+                            
+                            <!-- WordPress Configuration -->
+                            <h6 class="mb-3 mt-4">WordPress Configuration</h6>
+                            <div class="mb-3">
+                                <label for="wpName" class="form-label">WordPress Site Name</label>
+                                <input type="text" class="form-control" id="wpName" required placeholder="My WordPress Site">
+                                <div class="form-text">A name to identify this WordPress site</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="wpUrl" class="form-label">WordPress URL</label>
+                                <input type="url" class="form-control" id="wpUrl" required placeholder="https://example.com">
+                                <div class="form-text">The URL of your WordPress site (e.g., https://example.com)</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="wpUsername" class="form-label">WordPress Username</label>
+                                <input type="text" class="form-control" id="wpUsername" required placeholder="admin">
+                                <div class="form-text">Your WordPress username</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="wpPassword" class="form-label">WordPress Application Password</label>
+                                <input type="password" class="form-control" id="wpPassword" required placeholder="xxxx xxxx xxxx xxxx">
+                                <div class="form-text">Your WordPress application password</div>
+                            </div>
+                            
+                            <!-- YouTube Channel -->
+                            <h6 class="mb-3 mt-4">YouTube Channel Configuration</h6>
+                            <div class="mb-3">
+                                <label for="youtubeRSS" class="form-label">YouTube RSS URL or Channel ID</label>
+                                <input type="text" class="form-control" id="youtubeRSS" placeholder="https://www.youtube.com/feeds/videos.xml?channel_id=...">
+                                <div class="form-text">Either the complete RSS URL or just the YouTube Channel ID</div>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="autoPublish" checked>
+                                <label class="form-check-label" for="autoPublish">
+                                    Auto-publish articles to WordPress
+                                </label>
+                                <div class="form-text">If checked, articles will be automatically published to WordPress as drafts</div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="saveProjectBtn">Create Project & Start</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Details Modal -->
+        <div class="modal fade" id="projectDetailsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="projectDetailsTitle">Project Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="projectDetailsContent">
+                        <!-- Project details will be loaded here -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/projects.js') }}"></script>
+</body>
+</html>

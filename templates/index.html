@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Article Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .container { max-width: 900px; }
+        .result { white-space: pre-wrap; }
+        .loading { display: none; }
+        .loading.active { display: block; }
+        .error { color: #dc3545; }
+        .success { color: #198754; }
+        .article-content {
+            font-family: 'Georgia', serif;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .article-content h1 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .article-content h2 {
+            font-size: 1.6rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: #444;
+        }
+        .article-content h3 {
+            font-size: 1.3rem;
+            margin-top: 1.8rem;
+            margin-bottom: 0.8rem;
+            color: #555;
+        }
+        .article-content h4 {
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+        .article-content p {
+            margin-bottom: 1.2rem;
+            color: #333;
+        }
+        .article-content ul, .article-content ol {
+            margin-bottom: 1.5rem;
+            padding-left: 2rem;
+        }
+        .article-content li {
+            margin-bottom: 0.5rem;
+        }
+        .article-content table {
+            width: 100%;
+            margin-bottom: 1.5rem;
+            border-collapse: collapse;
+        }
+        .article-content table th, .article-content table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        .article-content table th {
+            background-color: #f7f7f7;
+        }
+        .faq-item {
+            margin-bottom: 1.5rem;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .faq-item h4 {
+            color: #333;
+            margin-top: 0;
+        }
+        .metadata-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .metadata-label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .copy-btn {
+            margin-bottom: 15px;
+        }
+        .btn-group {
+            margin-bottom: 20px;
+        }
+        #articleTabs {
+            margin-bottom: 20px;
+        }
+        #rawContent {
+            display: none;
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">YouTube Article Generator</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/projects">Projects</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="display-4">YouTube Article Generator</h1>
+                <p class="lead">Generate complete articles from YouTube videos automatically</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/projects" class="btn btn-primary btn-lg">
+                    <i class="bi bi-folder"></i> Manage Projects
+                </a>
+            </div>
+        </div>
+        <h1 class="mb-4">YouTube Article Generator</h1>
+        
+        <!-- Form for a YouTube URL -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Generate an article from a video</h5>
+                <form id="videoForm">
+                    <div class="mb-3">
+                        <label for="youtubeUrl" class="form-label">YouTube URL</label>
+                        <input type="url" class="form-control" id="youtubeUrl" required 
+                               placeholder="https://www.youtube.com/watch?v=...">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="publishToWordPress">
+                            <label class="form-check-label" for="publishToWordPress">
+                                Publish to WordPress
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="generateBtn">
+                        Generate Article
+                    </button>
+                    <div class="loading mt-3" id="loading">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner-border text-primary me-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span>Generating article...</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Form for YouTube search -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Search YouTube</h5>
+                <p class="card-text">Search for videos on YouTube and generate articles (no API key required)</p>
+                <form id="searchForm">
+                    <div class="mb-3">
+                        <label for="searchQuery" class="form-label">Search Query</label>
+                        <input type="text" class="form-control" id="searchQuery" required
+                               placeholder="Enter search terms...">
+                    </div>
+                    <div class="mb-3">
+                        <label for="maxResults" class="form-label">Maximum Results</label>
+                        <input type="number" class="form-control" id="maxResults" value="3" min="1" max="10">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="searchPublishToWordPress">
+                            <label class="form-check-label" for="searchPublishToWordPress">
+                                Publish results to WordPress
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-info">
+                        Search & Generate
+                    </button>
+                    <div class="loading mt-3" id="searchLoading" style="display: none;">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner-border text-info me-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span>Searching and generating articles...</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Form for autopilot mode -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Autopilot Mode</h5>
+                <p class="card-text">Monitor a YouTube channel or RSS feed and automatically generate articles for new videos</p>
+                <form id="autopilotForm">
+                    <div class="mb-3">
+                        <label for="channelId" class="form-label">YouTube Channel ID or RSS URL</label>
+                        <input type="text" class="form-control" id="channelId" placeholder="Enter YouTube Channel ID (UCxxxx) or complete RSS URL (https://www.youtube.com/feeds/videos.xml?channel_id=...)">
+                        <div class="form-text">Example: UCsBjURrPoezykLs9EqgamOA or https://www.youtube.com/feeds/videos.xml?channel_id=UCsBjURrPoezykLs9EqgamOA</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="rssPublishToWordPress" checked>
+                            <label class="form-check-label" for="rssPublishToWordPress">
+                                Auto-publish to WordPress
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">Start Autopilot</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- WordPress Connection Test -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">WordPress Integration</h5>
+                <p class="card-text">Test the connection to your WordPress site</p>
+                <button id="testWordPressBtn" class="btn btn-secondary">Test Connection</button>
+                <div id="wordpressStatus" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- Result area -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Result</h5>
+                <div id="errorDisplay" class="error mb-3"></div>
+                
+                <div id="articleContainer" style="display: none;">
+                    <!-- Metadata section -->
+                    <div class="metadata-section">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="metadata-label">Title:</div>
+                                <div id="articleTitle" class="mb-3"></div>
+                                
+                                <div class="metadata-label">Meta Description:</div>
+                                <div id="articleMetaDescription" class="mb-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Buttons for actions -->
+                    <div class="mb-4">
+                        <button id="copyHtmlBtn" class="btn btn-primary me-2">
+                            <i class="fas fa-copy"></i> Copy HTML
+                        </button>
+                        <button id="copyMarkdownBtn" class="btn btn-secondary me-2">
+                            <i class="fas fa-copy"></i> Copy Markdown
+                        </button>
+                        <button id="copyMetadataBtn" class="btn btn-info">
+                            <i class="fas fa-copy"></i> Copy Metadata
+                        </button>
+                    </div>
+                    
+                    <!-- Tabs for different views -->
+                    <ul class="nav nav-tabs" id="articleTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="preview-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#preview" type="button" role="tab">Preview</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="raw-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#raw" type="button" role="tab">Raw Markdown</button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Tab content -->
+                    <div class="tab-content mt-3">
+                        <div class="tab-pane fade show active" id="preview" role="tabpanel">
+                            <!-- Article content with proper styling -->
+                            <div id="articleContent" class="article-content"></div>
+                        </div>
+                        <div class="tab-pane fade" id="raw" role="tabpanel">
+                            <div id="rawContent" class="p-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const loading = document.getElementById('loading');
+        const searchLoading = document.getElementById('searchLoading');
+        const errorDisplay = document.getElementById('errorDisplay');
+        const articleContainer = document.getElementById('articleContainer');
+        const articleContent = document.getElementById('articleContent');
+        const articleTitle = document.getElementById('articleTitle');
+        const articleMetaDescription = document.getElementById('articleMetaDescription');
+        const copyHtmlBtn = document.getElementById('copyHtmlBtn');
+        const copyMarkdownBtn = document.getElementById('copyMarkdownBtn');
+        const copyMetadataBtn = document.getElementById('copyMetadataBtn');
+        const rawContent = document.getElementById('rawContent');
+        
+        let currentArticleData = null;
+        
+        // Function to show loading indicator
+        function showLoading() {
+            loading.classList.add('active');
+            errorDisplay.innerHTML = '';
+            errorDisplay.style.display = 'none';
+        }
+        
+        // Function to hide loading indicator
+        function hideLoading() {
+            loading.classList.remove('active');
+        }
+        
+        // Function to show error message
+        function showError(message) {
+            errorDisplay.innerHTML = message;
+            errorDisplay.style.display = 'block';
+        }
+        
+        // Function to display article
+        function showArticle(articleData) {
+            currentArticleData = articleData;
+            
+            // Extract and display metadata
+            articleTitle.textContent = articleData.title || 'No title';
+            articleMetaDescription.textContent = articleData.meta_description || 'No meta description';
+            
+            // Display content
+            articleContent.innerHTML = articleData.content;
+            
+            // Display raw content
+            rawContent.textContent = JSON.stringify(articleData, null, 2);
+            
+            // Show container
+            articleContainer.style.display = 'block';
+        }
+        
+        // Function to copy text to clipboard
+        function copyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        }
+        
+        // Event listeners for copy buttons
+        copyHtmlBtn.addEventListener('click', () => {
+            if (currentArticleData) {
+                copyToClipboard(currentArticleData.content);
+            }
+        });
+        
+        copyMarkdownBtn.addEventListener('click', () => {
+            if (currentArticleData) {
+                copyToClipboard(currentArticleData.markdown_content || 'No markdown content');
+            }
+        });
+        
+        copyMetadataBtn.addEventListener('click', () => {
+            if (currentArticleData) {
+                const metadata = `Title: ${currentArticleData.title || 'No title'}\nMeta Description: ${currentArticleData.meta_description || 'No meta description'}`;
+                copyToClipboard(metadata);
+            }
+        });
+        
+        // Form submission for article generation
+        document.getElementById('videoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const youtubeUrl = document.getElementById('youtubeUrl').value;
+            const publishToWordPress = document.getElementById('publishToWordPress').checked;
+            
+            if (!youtubeUrl) {
+                showError('Please enter a YouTube URL');
+                return;
+            }
+            
+            showLoading();
+            articleContainer.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/generate-article', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        url: youtubeUrl, 
+                        publish_to_wordpress: publishToWordPress,
+                        categories: ['YouTube Articles']
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'error') {
+                    showError(data.error);
+                } else if (data.status === 'success') {
+                    showArticle(data);
+                    
+                    // Show WordPress publishing info if available
+                    if (data.wordpress_published) {
+                        const wpInfo = document.createElement('div');
+                        wpInfo.className = 'alert alert-success mt-3';
+                        wpInfo.innerHTML = `<strong>Success!</strong> Article published to WordPress (Post ID: ${data.wordpress_post_id})`;
+                        articleContainer.insertBefore(wpInfo, articleContainer.firstChild);
+                    } else if (data.wordpress_error) {
+                        const wpError = document.createElement('div');
+                        wpError.className = 'alert alert-warning mt-3';
+                        wpError.innerHTML = `<strong>Note:</strong> Article generated but not published to WordPress: ${data.wordpress_error}`;
+                        articleContainer.insertBefore(wpError, articleContainer.firstChild);
+                    }
+                } else {
+                    showError('An unexpected error occurred');
+                }
+            } catch (error) {
+                showError('Failed to connect to the server: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        });
+        
+        // Search form submission
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const searchQuery = document.getElementById('searchQuery').value;
+            const maxResults = document.getElementById('maxResults').value;
+            const publishToWordPress = document.getElementById('searchPublishToWordPress').checked;
+            
+            if (!searchQuery) {
+                showError('Please enter a search query');
+                return;
+            }
+            
+            searchLoading.style.display = 'block';
+            errorDisplay.innerHTML = '';
+            errorDisplay.style.display = 'none';
+            articleContainer.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/youtube/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        query: searchQuery, 
+                        max_results: maxResults,
+                        days_threshold: 7,
+                        auto_publish: publishToWordPress,
+                        categories: ['YouTube Search', 'Auto-Generated']
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'error') {
+                    showError(data.error);
+                } else if (data.status === 'success') {
+                    // Display search results summary
+                    const resultsDiv = document.createElement('div');
+                    resultsDiv.className = 'alert alert-info';
+                    
+                    const successCount = data.results.filter(r => r.status === 'success').length;
+                    const errorCount = data.results.filter(r => r.status === 'error').length;
+                    const skippedCount = data.results.filter(r => r.status === 'skipped').length;
+                    
+                    resultsDiv.innerHTML = `
+                        <h4>Search Results for "${data.query}"</h4>
+                        <p>Total videos processed: ${data.results.length}</p>
+                        <ul>
+                            <li>Successfully generated: ${successCount}</li>
+                            <li>Errors: ${errorCount}</li>
+                            <li>Skipped (already processed): ${skippedCount}</li>
+                        </ul>
+                    `;
+                    
+                    // Add detailed results
+                    const detailsDiv = document.createElement('div');
+                    detailsDiv.className = 'mt-3';
+                    detailsDiv.innerHTML = '<h5>Detailed Results:</h5>';
+                    
+                    const resultList = document.createElement('ul');
+                    resultList.className = 'list-group';
+                    
+                    data.results.forEach(result => {
+                        const item = document.createElement('li');
+                        item.className = `list-group-item ${result.status === 'success' ? 'list-group-item-success' : result.status === 'error' ? 'list-group-item-danger' : 'list-group-item-warning'}`;
+                        
+                        item.innerHTML = `
+                            <h6>${result.title}</h6>
+                            <p><a href="${result.url}" target="_blank">${result.url}</a></p>
+                            <p>${result.message}</p>
+                        `;
+                        
+                        if (result.wordpress_post_id) {
+                            item.innerHTML += `<p>WordPress Post ID: ${result.wordpress_post_id}</p>`;
+                        }
+                        
+                        resultList.appendChild(item);
+                    });
+                    
+                    detailsDiv.appendChild(resultList);
+                    
+                    // Clear previous results
+                    articleContainer.innerHTML = '';
+                    
+                    // Append results
+                    articleContainer.appendChild(resultsDiv);
+                    articleContainer.appendChild(detailsDiv);
+                    articleContainer.style.display = 'block';
+                } else {
+                    showError('An unexpected error occurred');
+                }
+            } catch (error) {
+                showError('Failed to connect to the server: ' + error.message);
+            } finally {
+                searchLoading.style.display = 'none';
+            }
+        });
+        
+        // Autopilot form submission
+        document.getElementById('autopilotForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const channelIdOrUrl = document.getElementById('channelId').value;
+            const publishToWordPress = document.getElementById('rssPublishToWordPress').checked;
+            
+            if (!channelIdOrUrl) {
+                showError('Please enter a YouTube Channel ID or RSS URL');
+                return;
+            }
+            
+            errorDisplay.innerHTML = '';
+            errorDisplay.style.display = 'none';
+            
+            // Determine if this is a URL or just a channel ID
+            const isUrl = channelIdOrUrl.startsWith('http');
+            
+            try {
+                const response = await fetch('/api/autopilot/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(
+                        isUrl ? { 
+                            rss_url: channelIdOrUrl,
+                            auto_publish: publishToWordPress
+                        } : {
+                            channel_id: channelIdOrUrl,
+                            auto_publish: publishToWordPress
+                        }
+                    )
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'error') {
+                    showError(data.error);
+                } else if (data.status === 'success') {
+                    // Display success message
+                    const successDiv = document.createElement('div');
+                    successDiv.className = 'alert alert-success';
+                    successDiv.innerHTML = `
+                        <h4>Channel Monitoring Started</h4>
+                        <p>${data.message}</p>
+                        <p>The system will now automatically monitor this channel for new videos and generate articles.</p>
+                    `;
+                    
+                    // Clear previous results
+                    articleContainer.innerHTML = '';
+                    
+                    // Append success message
+                    articleContainer.appendChild(successDiv);
+                    articleContainer.style.display = 'block';
+                    
+                    // Clear form
+                    document.getElementById('channelId').value = '';
+                } else {
+                    showError('An unexpected error occurred');
+                }
+            } catch (error) {
+                showError('Failed to connect to the server: ' + error.message);
+            }
+        });
+        
+        // WordPress test connection
+        document.getElementById('testWordPressBtn').addEventListener('click', async () => {
+            const statusDiv = document.getElementById('wordpressStatus');
+            statusDiv.innerHTML = '<div class="spinner-border text-secondary" role="status"><span class="visually-hidden">Loading...</span></div> Testing connection...';
+            
+            try {
+                const response = await fetch('/api/wordpress/test-connection');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    statusDiv.innerHTML = `<div class="alert alert-success"><strong>Success!</strong> Connected to WordPress at ${data.site_url}</div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${data.error}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> Failed to connect to the server: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
