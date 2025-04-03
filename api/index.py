@@ -1,21 +1,20 @@
-from flask import Flask, jsonify, render_template, request, redirect, url_for
+from flask import Flask, request
 import os
 import sys
 
 # Add parent directory to path to import modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Import necessary modules
-from app import app as flask_app
-
-# For Vercel serverless function
-def handler(request, context):
-    """Serverless function handler for Vercel"""
-    return flask_app(request['headers'].get('Host', ''))
-
-# For local development
-if __name__ == "__main__":
-    flask_app.run(debug=True)
+# Import the Flask app from app.py
+try:
+    from app import app as flask_app
+except ImportError as e:
+    print(f"Error importing app: {str(e)}")
+    flask_app = Flask(__name__)
+    
+    @flask_app.route('/')
+    def error_index():
+        return "Import error occurred: " + str(e)
 
 # Export Flask application for Vercel
 app = flask_app
