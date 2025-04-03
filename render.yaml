@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: autoblog
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    repo: https://github.com/kyzerkul/autoblog.git
+    branch: master
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: WORDPRESS_URL
+        sync: false
+      - key: WORDPRESS_USERNAME
+        sync: false
+      - key: WORDPRESS_APP_PASSWORD
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
